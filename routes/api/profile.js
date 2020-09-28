@@ -129,4 +129,58 @@ router.delete("/", auth, async (req, res) => {
   }
 });
 
+router.put('/experience', [auth, [
+  check('title', 'Title is required').not().isEmpty(),
+  check('company', 'Company is required').not().isEmpty(),
+  check('from', 'From date is required').not().isEmpty(),
+]], async (req, res)=>{
+  const errors = validationResult(req)
+  if(!errors){
+    return res.status(400).json({errors: errors.array()})
+  }
+
+  const {
+    title,
+    company,
+    from,
+    to,
+    current,
+    description
+  } = req.body
+
+  const newExp = {
+    title,
+    company,
+    from,
+    to,
+    current,
+    description
+  }
+
+  try {
+
+    const profile = await Profile.findOne({user: req.user.id})
+    profile.experience.unshift(newExp)
+    await profile.save()
+    res.json(profile)
+  } catch (error) {
+    console.error(error.message)
+    res.status(500).send("Server error")
+  }
+})
+
+router.delete("/experience/:exp_id", auth, async (req, res)=>{
+  try {
+    const profile = await Profile.findOne({user: req.user.id})
+    const removeIndex = profile.experience.map(item=>item.id).indexOf(req.params.exp_id)
+    profile.experience.splice(removeIndex, 1)
+    await profile.save()
+    res.json(profile)
+
+  } catch (error) {
+    console.error(error.message)
+    res.status(500).send("Server error")
+  }
+})
+
 module.exports = router;
